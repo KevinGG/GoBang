@@ -15,6 +15,13 @@
 //invisiblize the regame btn for general usage
 - (void)invisibleReGameBtn;
 - (void)invisibleWithdrawBtn;
+- (void)initYourTurnLabel:(CGRect)rect;
+- (void)initCurrentPlayerLabel:(CGRect)rect;
+- (void)initTurnLabel:(CGRect)rect;
+- (void)initRedoLastMoveLabel:(CGRect)rect;
+- (void)initNewGameBtn:(CGRect)rect;
+- (void)initRematchBtn:(CGRect)rect;
+- (void)initMainMenuLabel:(CGRect)rect;
 
 
 //called when move data received

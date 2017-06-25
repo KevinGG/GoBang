@@ -38,8 +38,12 @@ int olRandomNum = 0;
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-	// Do any additional setup after loading the view, typically from a nib.
-    [self.view setBackgroundColor:[UIColor colorWithPatternImage:[UIImage imageNamed:@"bgBoard.png"]]];
+	
+    UIGraphicsBeginImageContext(self.view.frame.size);
+    [[UIImage imageNamed:@"bgBoard.png"] drawInRect:self.view.bounds];
+    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    self.view.backgroundColor = [UIColor colorWithPatternImage:image];
 }
 
 

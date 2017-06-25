@@ -34,13 +34,11 @@
 
 - (void)pauseAnimations
 {
-    
 	[self pauseLayer:self.layer];
 }
 
 - (void)resumeAnimations
 {
-    
 	[self resumeLayer:self.layer];
 }
 

@@ -58,8 +58,12 @@ NSString *const PresentAuthenticationViewController = @"present_authentication_v
 }
 
 - (void)lookupPlayers {
-    NSLog(@"Looking up %lu players...", (unsigned long)_match.playerIDs.count);
-    [GKPlayer loadPlayersForIdentifiers:_match.playerIDs withCompletionHandler:^(NSArray *players, NSError *error) {
+    NSLog(@"Looking up %lu players...", (unsigned long)_match.players.count);
+    NSMutableArray *playerIds = [[NSMutableArray alloc]initWithCapacity:_match.players.count];
+    for (GKPlayer *player in _match.players) {
+        [playerIds addObject: player.playerID];
+    }
+    [GKPlayer loadPlayersForIdentifiers:playerIds withCompletionHandler:^(NSArray *players, NSError *error) {
         if (error != nil) {
             NSLog(@"Error retrieving player info: %@", error.localizedDescription);
             _matchStarted = NO;
@@ -163,6 +167,8 @@ NSString *const PresentAuthenticationViewController = @"present_authentication_v
             NSLog(@"Player disconnected!");
             _matchStarted = NO;
             [_delegate matchEnded];
+            break;
+        default:
             break;
     }
 }

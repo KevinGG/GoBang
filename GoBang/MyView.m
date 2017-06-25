@@ -23,28 +23,35 @@
 @property (weak, nonatomic) IBOutlet UIImageView *cpImg;
 @property (strong, nonatomic)NSString *gameMode;
 @property (weak, nonatomic) IBOutlet UIButton *withdrawBtn;
+@property (weak, nonatomic) IBOutlet UILabel *yourTurnLabel;
+@property (weak, nonatomic) IBOutlet UIButton *reOlMatchBtn;
+@property (weak, nonatomic) IBOutlet UIButton *mainMenuBtn;
 
 @end
-@implementation MyView
+@implementation MyView{
+    CGFloat cellSize;
+}
 
 int gameStatus=2;
 NSString *const pvpMode = @"pvp";
 NSString *const pveMode = @"pve";
 NSString *const olMode = @"ol";
 
-//extern from mainmenu controller
+// extern from mainmenu controller
 extern NSString * Gmode;
 extern NSString * playerColor;
 extern int AI1stFlg;
 
-//extern from view controller
+// extern from view controller
 extern GameState olGameState;
 extern BOOL _isBlack;
 extern CGPoint olMove;
 
 int px;//click position
 int py;//click position
-int ix;//index of board logic
+
+// index of board logic
+int ix;
 int iy;
 
 - (NSString *)gameMode{
@@ -52,6 +59,13 @@ int iy;
         _gameMode = Gmode;
     }
     return _gameMode;
+}
+
+- (CGFloat) cellSize{
+    if(!cellSize){
+        cellSize = screenHeight() / (CELL_NUM + 1);
+    }
+    return cellSize;
 }
 
 - (Board *)GameBoard{
@@ -84,22 +98,13 @@ int iy;
     }
 }
 
-- (id)initWithFrame:(CGRect)frame
-{
-    self = [super initWithFrame:frame];
-    if (self) {
-        // Initialization code
-    }
-    return self;
-}
-
 #pragma mark recording system
-
 - (void)recordMoveAtX:(int)x Y:(int)y{
     CGPoint p = CGPointMake(x, y);
     NSValue *v = [NSValue valueWithCGPoint:p];
     [self.GameBoard.moves addObject:v];
 }
+
 - (IBAction)withDraw:(id)sender {
     if(![self.gameMode isEqualToString:olMode] && gameStatus != 0 && (([self.GameBoard.moves count]>0 && ![self.gameMode isEqualToString:pveMode]) || (AI1stFlg != 0 && [self.gameMode isEqualToString:pveMode] && [self.GameBoard.moves count]>2) )){
         [self withDrawLastMove];
@@ -113,7 +118,7 @@ int iy;
 - (void)withDrawLastMove{
     CGPoint p = [[self.GameBoard.moves lastObject]CGPointValue];
     [self.GameBoard.moves removeLastObject];
-    NSLog(@"%d", [self.GameBoard.moves count]);
+    NSLog(@"%lu", (unsigned long)[self.GameBoard.moves count]);
     self.GameBoard.cells[(int)p.x][(int)p.y]=@"e";
     //change current player back
     [self.currentPlayer isEqualToString:@"b"]?(self.currentPlayer=@"w"):(self.currentPlayer=@"b");//change cp
@@ -122,8 +127,6 @@ int iy;
     [self setNeedsDisplay];
 
 }
-
-
 
 #pragma mark player and AI moves in 3 modes
 
@@ -170,15 +173,17 @@ int iy;
 - (void) playerMove: (NSSet *)touches{
     CGPoint moveTobeSent;
     if (gameStatus!=0) {
+        const int CELL_SIZE = [self cellSize];
+        const int TOUCHABLE_UPPERBOUND = screenHeight() - CELL_SIZE / 2;
         UITouch *touch = [touches anyObject];
         CGPoint point = [touch locationInView:self];
-        if (point.x>=24 && point.x<=730 && point.y>=24 && point.y<=730) {
-            int tpx = (int)point.x%48>24? (int)point.x/48*48+48: (int)point.x/48*48;
-            int tpy = (int)point.y%48>24? (int)point.y/48*48+48: (int)point.y/48*48;
-            ix = tpx/48-1;
-            iy = tpy/48-1;
-            ix = (ix>=15)?ix--:ix;
-            iy = (iy>=15)?iy--:iy;
+        if (point.x>=CELL_SIZE/2 && point.x<=TOUCHABLE_UPPERBOUND && point.y>=CELL_SIZE && point.y<=TOUCHABLE_UPPERBOUND) {
+            int tpx = (int)point.x%CELL_SIZE>CELL_SIZE/2? (int)point.x/CELL_SIZE*CELL_SIZE+CELL_SIZE: (int)point.x/CELL_SIZE*CELL_SIZE;
+            int tpy = (int)point.y%CELL_SIZE>CELL_SIZE/2? (int)point.y/CELL_SIZE*CELL_SIZE+CELL_SIZE: (int)point.y/CELL_SIZE*CELL_SIZE;
+            ix = tpx/CELL_SIZE-1;
+            iy = tpy/CELL_SIZE-1;
+            ix = (ix>=CELL_NUM)?ix--:ix;
+            iy = (iy>=CELL_NUM)?iy--:iy;
             if ([self.GameBoard.cells[ix][iy] isEqualToString:@"e"]) {
                 moveTobeSent = CGPointMake(ix, iy);
                 px=tpx;
@@ -269,15 +274,6 @@ CGPoint pointsDown[15];
 CGPoint pointsLeft[15];
 CGPoint pointsRight[15];
 
-/*
-// Only override drawRect: if you perform custom drawing.
-// An empty implementation adversely affects performance during animation.
-- (void)drawRect:(CGRect)rect
-{
-    // Drawing code
-}
-*/
-
 - (void)alert{
     NSString *cp;
     if ([self.currentPlayer isEqualToString:@"w"]) {
@@ -338,6 +334,8 @@ CGPoint pointsRight[15];
     [self setNeedsDisplay];
 }
 
+#pragma mark UI_CONTROL
+
 - (void)invisibleReGameBtn{
     self.reGame.hidden = YES;
 }
@@ -346,44 +344,71 @@ CGPoint pointsRight[15];
     self.withdrawBtn.hidden = YES;
 }
 
+- (void)initYourTurnLabel:(CGRect)rect{
+    [self.yourTurnLabel setFrame:rect];
+}
+
+- (void)initCurrentPlayerLabel:(CGRect)rect{
+    [self.cpImg setFrame:rect];
+}
+
+- (void)initTurnLabel:(CGRect)rect{
+    [self.turnLabel setFrame:rect];
+}
+
+- (void)initRedoLastMoveLabel:(CGRect)rect{
+    [self.withdrawBtn setFrame:rect];
+}
+
+- (void)initNewGameBtn:(CGRect)rect{
+    [self.reGame setFrame:rect];
+}
+
+- (void)initRematchBtn:(CGRect)rect{
+    [self.reOlMatchBtn setFrame:rect];
+}
+
+- (void)initMainMenuLabel:(CGRect)rect{
+    [self.mainMenuBtn setFrame:rect];
+}
+
 
 - (void)drawRect:(CGRect)rect{
-        CGContextRef ctx = UIGraphicsGetCurrentContext();
-        [self drawBoard:ctx];
+    CGContextRef ctx = UIGraphicsGetCurrentContext();
+    [self drawBoard:ctx];
 }
 
 - (void)drawBoard:(CGContextRef)ctx{
-    //NSLog(@"%d%@",AI1stFlg,self.gameMode);
     if (AI1stFlg==0 && [self.gameMode isEqualToString:pveMode]) {
         [self AIMove];
         [[AudioTool sharedAudioTool] playAudioWithPath:@"dropPiece" ofType:@"mp3" times:1];
         AI1stFlg =1;
     }
-    CGContextMoveToPoint(ctx, 48, 48);
+    const int CELL_SIZE = [self cellSize];
+    CGContextMoveToPoint(ctx, CELL_SIZE, CELL_SIZE);
     Paint *p = [[Paint alloc]initWithCtx:ctx];
-    for (int i = 1; i < 16; i++) {
-        pointsUp[i-1]=CGPointMake(48*i,48);
-        pointsDown[i-1]=CGPointMake(48*i, 48*15);
-        pointsLeft[i-1]=CGPointMake(48, 48*i);
-        pointsRight[i-1]=CGPointMake(48*15, 48*i);
+    for (int i = 1; i <= CELL_NUM; i++) {
+        pointsUp[i-1]=CGPointMake(CELL_SIZE*i,CELL_SIZE);
+        pointsDown[i-1]=CGPointMake(CELL_SIZE*i, CELL_SIZE*CELL_NUM);
+        pointsLeft[i-1]=CGPointMake(CELL_SIZE, CELL_SIZE*i);
+        pointsRight[i-1]=CGPointMake(CELL_SIZE*CELL_NUM, CELL_SIZE*i);
     }
     
-    for (int i = 0; i < 15; i++){
-        [p drawLineFrom:pointsUp[i] to:pointsDown[i] withWidth:3];
-        [p drawLineFrom:pointsLeft[i] to:pointsRight[i] withWidth:3];
+    for (int i = 0; i < CELL_NUM; i++){
+        [p drawLineFrom:pointsUp[i] to:pointsDown[i] withWidth:1];
+        [p drawLineFrom:pointsLeft[i] to:pointsRight[i] withWidth:1];
     }
-    for (int i=0; i<15; i++) {
-        for (int j=0; j<15; j++) {
+    for (int i=0; i<CELL_NUM; i++) {
+        for (int j=0; j<CELL_NUM; j++) {
             if ([self.GameBoard.cells[i][j] isEqualToString:@"b"]) {
                 CGContextSetFillColorWithColor(ctx, [[UIColor blackColor]CGColor]);
-                [p drawCircleAt:CGPointMake(48*i+48, 48*j+48) size:40];
+                [p drawCircleAt:CGPointMake(CELL_SIZE*i+CELL_SIZE, CELL_SIZE*j+CELL_SIZE) size:CELL_SIZE-3];
             }else if([self.GameBoard.cells[i][j] isEqualToString:@"w"]){
                 CGContextSetFillColorWithColor(ctx, [[UIColor whiteColor]CGColor]);
-                [p drawCircleAt:CGPointMake(48*i+48, 48*j+48) size:40];
+                [p drawCircleAt:CGPointMake(CELL_SIZE*i+CELL_SIZE, CELL_SIZE*j+CELL_SIZE) size:CELL_SIZE-3];
             }
         }
     }
-
 }
 
 
